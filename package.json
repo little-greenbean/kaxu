@@ -1,0 +1,12 @@
+{
+  "name": "kaxu",
+  "version": "0.0.0",
+  "private": true,
+  "description": "An open control plane for local AI coding agents.",
+  "license": "LGPL-3.0-only",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "check": "pnpm run check:public-boundary",
+    "check:public-boundary": "bash scripts/check-public-boundary.sh"
+  }
+}
