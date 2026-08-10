@@ -16,7 +16,7 @@ Do not duplicate these rules in another governance file.
 - Model: Open Core
 - License: LGPL-3.0-only
 - Initialized: 2026-08-04
-- Current state: pre-implementation architecture stage
+- Current state: pre-implementation architecture stage with shared TypeScript, Vitest, and Zod tooling
 
 The repository currently has no runtime source beyond scripts/check-public-boundary.sh. The four packages and one app are placeholders with package metadata and intent documentation only.
 
@@ -126,11 +126,13 @@ Placeholder READMEs describe intent, not working behavior.
 | Item | Value | Status |
 |---|---|---|
 | Package manager | pnpm 9.15.0, pinned with packageManager | Confirmed |
+| Runtime | Node.js 22.12 or newer | Confirmed for the shared toolchain |
 | Repository | Monorepo: apps/*, packages/*, examples/* | Confirmed |
 | License | LGPL-3.0-only | Confirmed |
-| Language | TypeScript | Pending configuration |
+| Language | TypeScript | Confirmed; strict root typecheck |
+| Schema library | Zod 4.4.3 | Confirmed in @kaxu/protocol |
 | Build tool | Not selected | Pending |
-| Test framework | Not selected | Pending |
+| Test framework | Vitest 4.1.10 | Confirmed; root test command |
 | Linter / formatter | None beyond .editorconfig | Pending |
 
 New dependencies must have compatible open-source licenses and pinned versions rather than open ranges.
@@ -142,10 +144,12 @@ New dependencies must have compatible open-source licenses and pinned versions r
 | Command | Purpose |
 |---|---|
 | pnpm install | Install dependencies |
+| pnpm typecheck | Run the strict root TypeScript check |
+| pnpm test | Run the Vitest test suite |
 | pnpm check | Run all currently defined checks |
 | pnpm check:public-boundary | Run scripts/check-public-boundary.sh |
 
-dev, build, test, lint, and format are not defined. Do not reference them in documentation or CI until they exist.
+dev, build, lint, and format are not defined. Do not reference them in documentation or CI until they exist.
 
 When the first real toolchain is introduced, update this section and the change log in the same PR.
 
@@ -261,10 +265,9 @@ Do not add scaffolding for deferred features.
 
 ### Tooling
 
-- [ ] Configure strict TypeScript and path aliases.
-- [ ] Select a build tool and test framework.
+- [ ] Select a build tool.
 - [ ] Select a linter and formatter.
-- [ ] Extend pnpm check with typecheck, test, and lint commands.
+- [ ] Extend pnpm check with lint when a linter is selected.
 - [ ] Add examples/package.json so examples participates in the workspace.
 
 ### Implementation
@@ -285,5 +288,6 @@ Do not add scaffolding for deferred features.
 
 | Date | Change |
 |---|---|
+| 2026-08-10 | Added the first shared TypeScript, Vitest, and Zod toolchain; pnpm check now runs boundary, type, and test checks. |
 | 2026-08-10 | Consolidated governance and current state into current_project.md; AGENTS.md now points here. |
 | 2026-08-05 | Initialized the architecture-stage project state and open task list. |
