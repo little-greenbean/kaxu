@@ -7,7 +7,7 @@ reviews:
   poem: false
   auto_review:
     enabled: true
-    drafts: false
+    drafts: true
 
 chat:
   auto_reply: true
