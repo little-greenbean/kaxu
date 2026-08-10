@@ -1,6 +1,6 @@
 # Operation Protocol
 
-The Kaxu protocol connects clients, the operation core, adapters, and event consumers. This document defines the initial direction; schemas are not stable until a versioned package and contract tests are published.
+`packages/protocol` publishes the executable v1 contract. The package exports Zod schemas and helpers; this document matches the shipped names and behavior.
 
 ## Protocol principles
 
@@ -8,10 +8,25 @@ The Kaxu protocol connects clients, the operation core, adapters, and event cons
 - One `operationId` identifies the same action across its full lifecycle.
 - Events are ordered within a session and can be replayed after reconnect.
 - Consumers must be idempotent.
-- Unknown optional fields must not break older clients.
+- Unknown top-level fields are preserved so older clients can ignore newer extensions.
 - Provider-specific payloads stay behind adapter-owned extension fields.
 
-## Conceptual operation
+## Exported contract
+
+```ts
+import {
+  currentProtocolVersion,
+  operationCommandSchema,
+  operationEventReplaySchema,
+  operationEventSchema,
+  operationStatusSchema,
+  protocolErrorSchema,
+  protocolVersionSchema,
+  sessionOperationSchema
+} from "@kaxu/protocol"
+```
+
+### `SessionOperation`
 
 ```ts
 type SessionOperation = {
@@ -30,14 +45,15 @@ type SessionOperation = {
     | "cancelled"
   createdAt: string
   updatedAt: string
+  extensions?: Record<string, unknown>
 }
 ```
 
-## Conceptual command envelope
+### `OperationCommand`
 
 ```ts
 type OperationCommand<TPayload = unknown> = {
-  protocolVersion: string
+  protocolVersion: "v1"
   commandId: string
   operationId: string
   sessionId: string
@@ -45,14 +61,15 @@ type OperationCommand<TPayload = unknown> = {
   type: string
   payload: TPayload
   issuedAt: string
+  extensions?: Record<string, unknown>
 }
 ```
 
-## Conceptual event envelope
+### `OperationEvent`
 
 ```ts
 type OperationEvent<TPayload = unknown> = {
-  protocolVersion: string
+  protocolVersion: "v1"
   eventId: string
   operationId: string
   sessionId: string
@@ -60,22 +77,28 @@ type OperationEvent<TPayload = unknown> = {
   type: string
   payload: TPayload
   occurredAt: string
+  extensions?: Record<string, unknown>
 }
 ```
 
-## Lifecycle
+### `ProtocolError`
 
-```text
-requested -> waiting -> approved -> running -> completed
-                                      \-> failed / cancelled
+```ts
+type ProtocolError = {
+  protocolVersion: string
+  code: "invalid_envelope" | "invalid_transition" | "unsupported_version"
+  message: string
+  operationId?: string
+  details?: unknown
+}
 ```
-
-Transitions must be deterministic. Invalid transitions produce a protocol error and do not mutate the operation.
 
 ## Replay
 
-A client records the highest contiguous event sequence it has applied. After reconnect, it requests events after that sequence. Replayed events retain their original `eventId`, `operationId`, and sequence so consumers can deduplicate them.
+`operationEventReplaySchema` validates a contiguous event list for one session. The first event can start at any positive sequence, but every following event must increment by one and stay in the same session.
+
+Replayed events retain their original `eventId`, `operationId`, and `sequence` so consumers can deduplicate them without executing an operation twice.
 
 ## Compatibility
 
-The first implementation will define versioning rules alongside executable schemas and contract tests. Until then, these types are explanatory and must not be treated as a stable wire contract.
+`currentProtocolVersion` is `v1`. Clients should reject unknown protocol versions closed rather than guessing at compatibility. Unknown optional fields are retained by the schema parser for forward-compatible projections.

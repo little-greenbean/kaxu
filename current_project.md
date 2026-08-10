@@ -16,11 +16,11 @@ Do not duplicate these rules in another governance file.
 - Model: Open Core
 - License: LGPL-3.0-only
 - Initialized: 2026-08-04
-- Current state: pre-implementation architecture stage with shared TypeScript, Vitest, and Zod tooling
+- Current state: first protocol contract implemented; the control-loop runtime is not implemented yet
 
-The repository currently has no runtime source beyond scripts/check-public-boundary.sh. The four packages and one app are placeholders with package metadata and intent documentation only.
+The repository now has executable schemas and contract tests in packages/protocol. The operation core, adapter SDK, Host, and Web projection remain placeholders with package metadata and intent documentation only.
 
-> 当前除 scripts/check-public-boundary.sh 外没有运行时源码。4 个包和 1 个应用只有包元数据及意图说明，不能视为已交付能力。
+> 当前只有 packages/protocol 提供可执行 schema 和契约测试。operation-core、adapter-sdk、Host 和 Web 仍只有包元数据及意图说明，不能视为已交付能力。
 
 ---
 
@@ -81,9 +81,9 @@ packages/operation-core must not import Provider SDKs, UI frameworks, network tr
 
 ### 2.4 Protocol stability / 协议稳定性
 
-Types in docs/public/protocol.md are explanatory. They are not a stable wire contract until packages/protocol ships executable schemas and contract tests.
+The executable v1 wire contract lives in packages/protocol. docs/public/protocol.md explains the same contract and must stay aligned with its schemas and contract tests.
 
-Do not build external integrations against the explanatory types or describe them as stable.
+The package is still private and unreleased; do not build external integrations against the unpublished 0.x package.
 
 ---
 
@@ -273,7 +273,6 @@ Do not add scaffolding for deferred features.
 ### Implementation
 
 - [ ] packages/operation-core: SessionOperation and deterministic transitions.
-- [ ] packages/protocol: executable schemas and contract tests.
 - [ ] packages/adapter-sdk: AgentAdapter, errors, backpressure, conformance suite.
 - [ ] packages/host: local process and session boundaries.
 - [ ] apps/web: pairing, session projection, approvals, reconnect and replay.
@@ -288,6 +287,7 @@ Do not add scaffolding for deferred features.
 
 | Date | Change |
 |---|---|
+| 2026-08-10 | Published the executable v1 protocol schemas, replay validation, protocol errors, and contract tests in @kaxu/protocol. |
 | 2026-08-10 | Added the first shared TypeScript, Vitest, and Zod toolchain; pnpm check now runs boundary, type, and test checks. |
 | 2026-08-10 | Consolidated governance and current state into current_project.md; AGENTS.md now points here. |
 | 2026-08-05 | Initialized the architecture-stage project state and open task list. |
