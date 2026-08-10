@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@kaxu/adapter-sdk": ["./packages/adapter-sdk/src/index.ts"],
+      "@kaxu/host": ["./packages/host/src/index.ts"],
+      "@kaxu/operation-core": ["./packages/operation-core/src/index.ts"],
+      "@kaxu/protocol": ["./packages/protocol/src/index.ts"],
+      "@kaxu/web": ["./apps/web/src/index.ts"]
+    }
+  },
+  "include": [
+    "apps/**/*.ts",
+    "packages/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.mts"
+  ],
+  "exclude": ["node_modules", "dist", "build", "coverage"]
+}

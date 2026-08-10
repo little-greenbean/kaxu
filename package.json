@@ -5,8 +5,17 @@
   "description": "An open control plane for local AI coding agents.",
   "license": "LGPL-3.0-only",
   "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
-    "check": "pnpm run check:public-boundary",
-    "check:public-boundary": "bash scripts/check-public-boundary.sh"
+    "check": "pnpm run check:public-boundary && pnpm run typecheck && pnpm run test",
+    "check:public-boundary": "bash scripts/check-public-boundary.sh",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "test": "vitest run --config vitest.config.mts"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
   }
 }
