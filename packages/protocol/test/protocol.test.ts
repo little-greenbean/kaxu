@@ -76,6 +76,10 @@ test("accepts contiguous replay and keeps event identity stable", () => {
   ])
 })
 
+test("accepts a single replay event", () => {
+  expect(operationEventReplaySchema.parse([event(1)])).toHaveLength(1)
+})
+
 test("rejects gaps and cross-session event replay", () => {
   const gap = operationEventReplaySchema.safeParse([event(1), event(3)])
   const crossSession = operationEventReplaySchema.safeParse([event(1), event(2, "session-2")])

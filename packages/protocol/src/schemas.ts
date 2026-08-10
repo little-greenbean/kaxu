@@ -69,18 +69,11 @@ export const operationEventReplaySchema = z
       return
     }
 
-    const first = events[0]
-    if (!first) {
-      return
-    }
+    const first = events[0]!
 
     for (let index = 1; index < events.length; index += 1) {
-      const previous = events[index - 1]
-      const current = events[index]
-
-      if (!previous || !current) {
-        continue
-      }
+      const previous = events[index - 1]!
+      const current = events[index]!
 
       if (current.sessionId !== first.sessionId) {
         context.addIssue({

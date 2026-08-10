@@ -12,9 +12,11 @@
     "check": "pnpm run check:public-boundary && pnpm run typecheck && pnpm run test",
     "check:public-boundary": "bash scripts/check-public-boundary.sh",
     "typecheck": "tsc --noEmit --project tsconfig.json",
-    "test": "vitest run --config vitest.config.mts"
+    "test": "vitest run --config vitest.config.mts",
+    "test:coverage": "vitest run --config vitest.config.mts --coverage"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "4.1.10",
     "typescript": "7.0.2",
     "vitest": "4.1.10"
   }

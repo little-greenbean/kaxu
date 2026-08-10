@@ -146,6 +146,7 @@ New dependencies must have compatible open-source licenses and pinned versions r
 | pnpm install | Install dependencies |
 | pnpm typecheck | Run the strict root TypeScript check |
 | pnpm test | Run the Vitest test suite |
+| pnpm test:coverage | Run Vitest with the V8 coverage provider |
 | pnpm check | Run all currently defined checks |
 | pnpm check:public-boundary | Run scripts/check-public-boundary.sh |
 
