@@ -1,0 +1,33 @@
+name: PR Agent review
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  pr-agent:
+    if: >-
+      github.event.sender.type != 'Bot' &&
+      (github.event_name == 'pull_request_target' ||
+      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/review')))
+    name: PR Agent review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run PR-Agent
+        uses: the-pr-agent/pr-agent@570f67ed5fc8db5be74c18df070bc20079b64b0d
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          OPENAI__API_BASE: ${{ secrets.OPENAI_API_BASE }}

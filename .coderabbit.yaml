@@ -6,8 +6,8 @@ reviews:
   high_level_summary: true
   poem: false
   auto_review:
-    enabled: true
-    drafts: true
+    enabled: false
+    drafts: false
 
 chat:
-  auto_reply: true
+  auto_reply: false
