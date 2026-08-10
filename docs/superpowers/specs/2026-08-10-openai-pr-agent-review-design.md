@@ -75,8 +75,8 @@ Action 使用 `pull_request_target` 获取仓库 Secret，并且不 checkout PR 
 
 ~~~toml
 [config]
-model = "gpt-4.1"
-fallback_models = ["gpt-4.1-mini"]
+model = "gpt-5.6-sol"
+fallback_models = ["gpt-5.6-terra"]
 response_language = "zh-CN"
 publish_output = true
 restricted_mode = true
@@ -88,7 +88,7 @@ auto_improve = false
 pr_actions = ["opened", "reopened", "ready_for_review", "synchronize"]
 ~~~
 
-模型固定为 `gpt-4.1`，失败时回退到 `gpt-4.1-mini`。后续模型调整只需修改 `.pr_agent.toml`，不需要修改 Secret 或工作流结构。
+模型固定为 `gpt-5.6-sol`，失败时回退到 `gpt-5.6-terra`。后续模型调整只需修改 `.pr_agent.toml`，不需要修改 Secret 或工作流结构。
 
 ## CodeRabbit 迁移
 
