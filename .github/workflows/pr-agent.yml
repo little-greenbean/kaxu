@@ -1,6 +1,13 @@
 name: PR Agent review
 
 on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Model ID to probe
+        required: true
+        default: gpt-5.6-sol
+        type: string
   pull_request_target:
     types:
       - opened
@@ -17,8 +24,116 @@ permissions:
   pull-requests: write
 
 jobs:
+  api-smoke-test:
+    if: github.event_name == 'workflow_dispatch'
+    name: OpenAI API smoke test
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe OpenAI-compatible API
+        shell: bash
+        env:
+          MODEL: ${{ inputs.model }}
+          OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${OPENAI_KEY:-}" || -z "${OPENAI_API_BASE:-}" ]]; then
+            echo "::error::OPENAI_KEY and OPENAI_API_BASE must both be configured"
+            exit 1
+          fi
+
+          if [[ ! "${MODEL}" =~ ^[A-Za-z0-9._:/-]+$ ]]; then
+            echo "::error::The model ID contains unsupported characters"
+            exit 1
+          fi
+
+          base_url="${OPENAI_API_BASE%/}"
+          models_response="${RUNNER_TEMP}/models-response.json"
+          chat_payload="${RUNNER_TEMP}/chat-payload.json"
+          chat_response="${RUNNER_TEMP}/chat-response.json"
+
+          report_error_metadata() {
+            local response_file="$1"
+            local error_type
+            local error_code
+
+            if ! jq -e 'type == "object"' "${response_file}" >/dev/null 2>&1; then
+              echo "response_format=non-json"
+              return
+            fi
+
+            error_type="$(jq -r '(.error.type // "unknown") | tostring | gsub("[^A-Za-z0-9._-]"; "_") | .[0:80]' "${response_file}")"
+            error_code="$(jq -r '(.error.code // "unknown") | tostring | gsub("[^A-Za-z0-9._-]"; "_") | .[0:80]' "${response_file}")"
+            echo "error.type=${error_type}"
+            echo "error.code=${error_code}"
+          }
+
+          if ! models_status="$(curl --silent \
+            --connect-timeout 10 \
+            --max-time 45 \
+            --output "${models_response}" \
+            --write-out "%{http_code}" \
+            --header "Authorization: Bearer ${OPENAI_KEY}" \
+            "${base_url}/models")"; then
+            echo "::error::GET /models failed before receiving an HTTP response"
+            exit 1
+          fi
+
+          echo "GET /models -> HTTP ${models_status}"
+          if [[ ! "${models_status}" =~ ^2[0-9]{2}$ ]]; then
+            report_error_metadata "${models_response}"
+            exit 1
+          fi
+
+          if ! jq -e 'type == "object" and (.data | type == "array")' "${models_response}" >/dev/null; then
+            echo "::error::GET /models returned a non-standard JSON payload"
+            exit 1
+          fi
+
+          echo "model=${MODEL}"
+          if jq -e --arg model "${MODEL}" 'any(.data[]?; .id == $model)' "${models_response}" >/dev/null; then
+            echo "model_listed=true"
+          else
+            echo "::warning::model_listed=false"
+          fi
+
+          jq -n --arg model "${MODEL}" '{
+            model: $model,
+            messages: [{role: "user", content: "Reply with OK."}]
+          }' > "${chat_payload}"
+
+          if ! chat_status="$(curl --silent \
+            --connect-timeout 10 \
+            --max-time 45 \
+            --output "${chat_response}" \
+            --write-out "%{http_code}" \
+            --header "Authorization: Bearer ${OPENAI_KEY}" \
+            --header "Content-Type: application/json" \
+            --data-binary "@${chat_payload}" \
+            "${base_url}/chat/completions")"; then
+            echo "::error::POST /chat/completions failed before receiving an HTTP response"
+            exit 1
+          fi
+
+          echo "POST /chat/completions -> HTTP ${chat_status}"
+          if [[ ! "${chat_status}" =~ ^2[0-9]{2}$ ]]; then
+            report_error_metadata "${chat_response}"
+            exit 1
+          fi
+
+          if ! jq -e '(.choices | type == "array" and length > 0) and (.choices[0].message | type == "object")' "${chat_response}" >/dev/null; then
+            echo "::error::POST /chat/completions returned an incompatible JSON payload"
+            exit 1
+          fi
+
+          echo "chat_completion_compatible=true"
+
   pr-agent:
     if: >-
+      github.event_name != 'workflow_dispatch' &&
       github.event.sender.type != 'Bot' &&
       (github.event_name == 'pull_request_target' ||
       (github.event.issue.pull_request && startsWith(github.event.comment.body, '/review')))
