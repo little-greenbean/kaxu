@@ -115,6 +115,21 @@ test("rejects gaps and cross-session event replay", () => {
   expect(crossSession.success).toBe(false)
 })
 
+test("rejects duplicate event identities in one replay", () => {
+  const duplicate = operationEventReplaySchema.safeParse([
+    event(1),
+    { ...event(2), eventId: "event-1" }
+  ])
+
+  expect(duplicate.success).toBe(false)
+  if (!duplicate.success) {
+    expect(duplicate.error.issues).toContainEqual(expect.objectContaining({
+      path: [1, "eventId"],
+      message: "replayed event identifiers must be unique"
+    }))
+  }
+})
+
 test("accepts protocol errors for unsupported versions", () => {
   const error = protocolErrorSchema.parse({
     protocolVersion: "v2",

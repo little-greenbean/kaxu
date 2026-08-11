@@ -112,7 +112,7 @@ type ProtocolError = {
 
 ## Replay
 
-`operationEventReplaySchema` validates a contiguous event list for one session. The first event can start at any sequence from `1` through `Number.MAX_SAFE_INTEGER`, but every following event must increment by one and stay in the same session.
+`operationEventReplaySchema` validates a contiguous event list for one session. The first event can start at any sequence from `1` through `Number.MAX_SAFE_INTEGER`, but every following event must increment by one and stay in the same session. Every `eventId` in one replay batch must be unique.
 
 Replayed events retain their original `eventId`, `operationId`, and `sequence` so consumers can deduplicate them without executing an operation twice.
 

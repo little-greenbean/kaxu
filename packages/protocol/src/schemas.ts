@@ -170,10 +170,20 @@ export const operationEventReplaySchema = z
     }
 
     const first = events[0]!
+    const eventIds = new Set([first.eventId])
 
     for (let index = 1; index < events.length; index += 1) {
       const previous = events[index - 1]!
       const current = events[index]!
+
+      if (eventIds.has(current.eventId)) {
+        context.addIssue({
+          code: "custom",
+          path: [index, "eventId"],
+          message: "replayed event identifiers must be unique"
+        })
+      }
+      eventIds.add(current.eventId)
 
       if (current.sessionId !== first.sessionId) {
         context.addIssue({
