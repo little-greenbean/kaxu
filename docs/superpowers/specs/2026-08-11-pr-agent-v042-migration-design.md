@@ -16,7 +16,7 @@ Kaxu 当前维护一套仓库内 review bot，包括事件过滤、diff 收集�
 - Draft PR 创建或推送新提交后能够自动审查。
 - 输出中文，并读取 `AGENTS.md` 与 `current_project.md`。
 - 模型与 Provider 由用户后续配置，不沿用旧的自定义 Base URL 和模型组合。
-- PR-Agent 调用失败时让 Action 明确失败。
+- 自动 PR-Agent 调用失败时让 Action 明确失败。
 - 删除自建模型编排与 smoke-test job。
 
 ## 非目标
@@ -62,7 +62,9 @@ OPENAI_KEY
 github_action_config.auto_review=true
 github_action_config.auto_describe=false
 github_action_config.auto_improve=false
-github_action_config.pr_actions=[opened,reopened,ready_for_review,synchronize]
+github_action_config.pr_actions=[opened,reopened,ready_for_review]
+github_action_config.handle_push_trigger=true
+github_action_config.push_commands=["/review -i"]
 ~~~
 
 不再注入 `OPENAI_API_BASE`，也不在 workflow 中指定模型。
@@ -77,13 +79,14 @@ github_action_config.pr_actions=[opened,reopened,ready_for_review,synchronize]
 - `repo_context_files = ["AGENTS.md", "current_project.md"]`
 - `repo_context_from_default_branch = true`
 - `publish_output = true`
+- 新提交通过 `push_commands = ["/review -i"]` 增量审查
 - review 使用持久评论并保留无问题结论
 
 模型字段故意不填写。用户选择模型后，在 `[config]` 中增加相应配置，例如：
 
 ~~~toml
-model = "gpt-5.6"
-fallback_models = ["gpt-5.6-terra"]
+model = "provider/model-name"
+fallback_models = ["provider/fallback-model-name"]
 ~~~
 
 Provider 所需 Secret 或环境变量按照 PR-Agent 官方文档配置，不进入 tracked files。
@@ -115,7 +118,9 @@ Provider 所需 Secret 或环境变量按照 PR-Agent 官方文档配置，不�
 
 ## 错误处理
 
-PR-Agent 使用自身的模型调用、fallback 和错误处理。`propagate_tool_errors = true` 确保最终失败传递给 GitHub Actions，不能把未完成审查显示为成功。
+PR-Agent 使用自身的模型调用、fallback 和错误处理。`propagate_tool_errors = true` 确保自动审查的最终失败传递给 GitHub Actions，不能把未完成审查显示为成功。
+
+PR-Agent v0.42.0 的评论命令入口会捕获工具异常，手动 `/review` 失败时可能只记录 Action 日志而不返回非零退出码。本仓库接受这一上游行为，不为它增加自建包装层。
 
 本仓库不再为 PR-Agent 包装额外重试。上游行为不满足要求时，先升级固定版本或向上游提交问题，不重新扩展自建审查层。
 
