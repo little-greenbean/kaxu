@@ -1,0 +1,12 @@
+[config]
+model = "gpt-5.6-sol"
+fallback_models = ["gpt-5.6-terra"]
+response_language = "zh-CN"
+publish_output = true
+restricted_mode = true
+
+[github_action_config]
+auto_review = true
+auto_describe = false
+auto_improve = false
+pr_actions = ["opened", "reopened", "ready_for_review", "synchronize"]
