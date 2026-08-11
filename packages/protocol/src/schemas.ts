@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z, type RefinementCtx } from "zod"
 
 export const currentProtocolVersion = "v1" as const
 
@@ -91,6 +91,20 @@ export const jsonValueSchema = z.custom<JsonValue>(isJsonValue, {
   message: "value must be losslessly JSON serializable"
 })
 
+function rejectExplicitUndefinedFields(fields: readonly string[]) {
+  return (value: Record<string, unknown>, context: RefinementCtx): void => {
+    for (const field of fields) {
+      if (Object.hasOwn(value, field) && value[field] === undefined) {
+        context.addIssue({
+          code: "custom",
+          path: [field],
+          message: "optional wire fields must be omitted instead of set to undefined"
+        })
+      }
+    }
+  }
+}
+
 export const protocolVersionSchema = z.literal(currentProtocolVersion)
 
 export const operationStatusSchema = z.enum([
@@ -116,6 +130,7 @@ export const sessionOperationSchema = z
     extensions: z.record(z.string(), jsonValueSchema).optional()
   })
   .catchall(jsonValueSchema)
+  .superRefine(rejectExplicitUndefinedFields(["extensions"]))
 
 export const operationCommandSchema = z
   .object({
@@ -130,6 +145,7 @@ export const operationCommandSchema = z
     extensions: z.record(z.string(), jsonValueSchema).optional()
   })
   .catchall(jsonValueSchema)
+  .superRefine(rejectExplicitUndefinedFields(["extensions"]))
 
 export const operationEventSchema = z
   .object({
@@ -144,6 +160,7 @@ export const operationEventSchema = z
     extensions: z.record(z.string(), jsonValueSchema).optional()
   })
   .catchall(jsonValueSchema)
+  .superRefine(rejectExplicitUndefinedFields(["extensions"]))
 
 export const operationEventReplaySchema = z
   .array(operationEventSchema)
@@ -191,17 +208,18 @@ export const protocolErrorSchema = z
     details: jsonValueSchema.optional()
   })
   .catchall(jsonValueSchema)
+  .superRefine(rejectExplicitUndefinedFields(["operationId", "details"]))
 
 type OperationCommandEnvelope = z.infer<typeof operationCommandSchema>
 type OperationEventEnvelope = z.infer<typeof operationEventSchema>
 
-export type OperationCommand<TPayload = JsonValue> = Omit<OperationCommandEnvelope, "payload"> & {
+export type OperationCommand<TPayload extends JsonValue = JsonValue> = Omit<OperationCommandEnvelope, "payload"> & {
   payload: TPayload
 }
-export type OperationEvent<TPayload = JsonValue> = Omit<OperationEventEnvelope, "payload"> & {
+export type OperationEvent<TPayload extends JsonValue = JsonValue> = Omit<OperationEventEnvelope, "payload"> & {
   payload: TPayload
 }
-export type OperationEventReplay<TPayload = JsonValue> = Array<OperationEvent<TPayload>>
+export type OperationEventReplay<TPayload extends JsonValue = JsonValue> = Array<OperationEvent<TPayload>>
 export type OperationStatus = z.infer<typeof operationStatusSchema>
 export type ProtocolError = z.infer<typeof protocolErrorSchema>
 export type ProtocolVersion = z.infer<typeof protocolVersionSchema>

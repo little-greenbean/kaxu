@@ -217,3 +217,76 @@ test("rejects non-JSON values in wire fields", () => {
     futureField: new Date(timestamp)
   }).success).toBe(false)
 })
+
+test.each([
+  [
+    "SessionOperation.extensions",
+    sessionOperationSchema,
+    {
+      operationId: "operation-1",
+      sessionId: "session-1",
+      actorId: "actor-1",
+      target: "workspace",
+      action: "send",
+      status: "running",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      extensions: undefined
+    },
+    "extensions"
+  ],
+  [
+    "OperationCommand.extensions",
+    operationCommandSchema,
+    {
+      protocolVersion: currentProtocolVersion,
+      commandId: "command-1",
+      operationId: "operation-1",
+      sessionId: "session-1",
+      actorId: "actor-1",
+      type: "message.send",
+      payload: { message: "hello" },
+      issuedAt: timestamp,
+      extensions: undefined
+    },
+    "extensions"
+  ],
+  [
+    "OperationEvent.extensions",
+    operationEventSchema,
+    {
+      ...event(1),
+      extensions: undefined
+    },
+    "extensions"
+  ],
+  [
+    "ProtocolError.operationId",
+    protocolErrorSchema,
+    {
+      protocolVersion: currentProtocolVersion,
+      code: "invalid_envelope",
+      message: "Invalid envelope",
+      operationId: undefined
+    },
+    "operationId"
+  ],
+  [
+    "ProtocolError.details",
+    protocolErrorSchema,
+    {
+      protocolVersion: currentProtocolVersion,
+      code: "invalid_envelope",
+      message: "Invalid envelope",
+      details: undefined
+    },
+    "details"
+  ]
+])("rejects explicit undefined in %s", (_name, schema, input, field) => {
+  const result = schema.safeParse(input)
+
+  expect(result.success).toBe(false)
+  if (!result.success) {
+    expect(result.error.issues).toContainEqual(expect.objectContaining({ path: [field] }))
+  }
+})

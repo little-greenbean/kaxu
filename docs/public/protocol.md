@@ -9,6 +9,7 @@
 - Events are ordered within a session and can be replayed after reconnect.
 - Consumers must be idempotent.
 - Wire values must be losslessly JSON serializable.
+- Optional wire fields may be omitted, but must not be present with the value `undefined`.
 - Unknown top-level fields are preserved when their values are valid JSON so older clients can ignore newer extensions.
 - Provider-specific payloads stay behind adapter-owned extension fields.
 
@@ -68,7 +69,7 @@ type SessionOperation = {
 ### `OperationCommand`
 
 ```ts
-type OperationCommand<TPayload = JsonValue> = {
+type OperationCommand<TPayload extends JsonValue = JsonValue> = {
   protocolVersion: "v1"
   commandId: string
   operationId: string
@@ -84,7 +85,7 @@ type OperationCommand<TPayload = JsonValue> = {
 ### `OperationEvent`
 
 ```ts
-type OperationEvent<TPayload = JsonValue> = {
+type OperationEvent<TPayload extends JsonValue = JsonValue> = {
   protocolVersion: "v1"
   eventId: string
   operationId: string
@@ -115,6 +116,13 @@ type ProtocolError = {
 
 Replayed events retain their original `eventId`, `operationId`, and `sequence` so consumers can deduplicate them without executing an operation twice.
 
+The exported replay type applies the same payload constraint:
+
+```ts
+type OperationEventReplay<TPayload extends JsonValue = JsonValue> =
+  Array<OperationEvent<TPayload>>
+```
+
 ## Compatibility
 
-`currentProtocolVersion` is `v1`. Clients should reject unknown protocol versions closed rather than guessing at compatibility. Unknown optional fields with JSON-safe values are retained by the schema parser for forward-compatible projections.
+`currentProtocolVersion` is `v1`. Clients should reject unknown protocol versions closed rather than guessing at compatibility. Unknown optional fields with JSON-safe values are retained by the schema parser for forward-compatible projections. Known optional fields may be absent, but an own property explicitly set to `undefined` is invalid because JSON serialization would silently remove it.
