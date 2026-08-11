@@ -7,12 +7,23 @@ import {
   operationCommandSchema,
   operationEventReplaySchema,
   operationEventSchema,
+  operationStatusSchema,
   parseOperationEventReplay,
   protocolErrorSchema,
   sessionOperationSchema
 } from "@kaxu/protocol"
 
 const timestamp = "2026-08-10T00:00:00.000Z"
+
+const lifecycleStatuses = [
+  "requested",
+  "waiting",
+  "approved",
+  "running",
+  "completed",
+  "failed",
+  "cancelled"
+] as const
 
 const event = (sequence: number, sessionId = "session-1") => ({
   protocolVersion: currentProtocolVersion,
@@ -68,6 +79,14 @@ test("requires a payload and validates session operation status", () => {
 
   expect(missingPayload.success).toBe(false)
   expect(operation.success).toBe(true)
+})
+
+test.each(lifecycleStatuses)("accepts operation lifecycle status: %s", (status) => {
+  expect(operationStatusSchema.parse(status)).toBe(status)
+})
+
+test("rejects values outside the operation lifecycle", () => {
+  expect(operationStatusSchema.safeParse("paused").success).toBe(false)
 })
 
 test("accepts contiguous replay and keeps event identity stable", () => {
