@@ -105,6 +105,7 @@ kaxu/
 ├── scripts/
 │   └── check-public-boundary.sh
 ├── .github/
+├── .pr_agent.toml              # PR-Agent repository review settings
 ├── AGENTS.md                    # points Agents to this file
 ├── current_project.md           # governance and current state
 ├── package.json
@@ -133,6 +134,7 @@ Placeholder READMEs describe intent, not working behavior.
 | Schema library | Zod 4.4.3 | Confirmed in @kaxu/protocol |
 | Build tool | TypeScript compiler | Confirmed for workspace package builds |
 | Test framework | Vitest 4.1.10 | Confirmed; root test command |
+| PR review | PR-Agent v0.42.0 GitHub Action, pinned by commit | Confirmed |
 | Linter / formatter | None beyond .editorconfig | Pending |
 
 New dependencies must have compatible open-source licenses and pinned versions rather than open ranges.
@@ -288,6 +290,7 @@ Do not add scaffolding for deferred features.
 | Date | Change |
 |---|---|
 | 2026-08-11 | Added TypeScript package builds and a native Node.js package-load test for @kaxu/protocol. |
+| 2026-08-11 | Replaced the repository-owned review pipeline with pinned PR-Agent v0.42.0 configuration. |
 | 2026-08-10 | Published the executable v1 protocol schemas, replay validation, protocol errors, and contract tests in @kaxu/protocol. |
 | 2026-08-10 | Added the first shared TypeScript, Vitest, and Zod toolchain; pnpm check now runs boundary, type, and test checks. |
 | 2026-08-10 | Consolidated governance and current state into current_project.md; AGENTS.md now points here. |

@@ -1,12 +1,20 @@
 [config]
-model = "gpt-5.6-sol"
-fallback_models = ["gpt-5.6-terra"]
-response_language = "zh-CN"
+# Add model and fallback_models here after choosing a Provider. Keep credentials in Actions Secrets.
 publish_output = true
+propagate_tool_errors = true
+repo_context_files = ["AGENTS.md", "current_project.md"]
+repo_context_from_default_branch = true
+response_language = "zh-CN"
 restricted_mode = true
+
+[pr_reviewer]
+persistent_comment = true
+publish_output_no_suggestions = true
 
 [github_action_config]
 auto_review = true
 auto_describe = false
 auto_improve = false
-pr_actions = ["opened", "reopened", "ready_for_review", "synchronize"]
+pr_actions = ["opened", "reopened", "ready_for_review"]
+handle_push_trigger = true
+push_commands = ["/review -i"]
