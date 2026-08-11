@@ -1,6 +1,6 @@
 # PR-Agent compatible endpoint and push-review reliability design
 
-Status: awaiting user review
+Status: approved; implemented pending merge
 
 Related Issue: #20
 

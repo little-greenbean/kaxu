@@ -47,9 +47,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          OPENAI.API_BASE: ${{ secrets.OPENAI_API_BASE }}
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "false"
           github_action_config.auto_improve: "false"
-          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review"]'
-          github_action_config.handle_push_trigger: "true"
-          github_action_config.push_commands: '["/review -i"]'
+          github_action_config.pr_actions: '["opened", "reopened", "ready_for_review", "synchronize"]'
