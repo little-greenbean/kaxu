@@ -1,6 +1,7 @@
 export {
   currentProtocolVersion,
   isSupportedProtocolVersion,
+  jsonValueSchema,
   operationCommandSchema,
   operationEventReplaySchema,
   operationEventSchema,
@@ -13,6 +14,7 @@ export {
 } from "./schemas.js"
 
 export type {
+  JsonValue,
   OperationCommand,
   OperationEvent,
   OperationEventReplay,

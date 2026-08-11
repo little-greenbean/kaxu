@@ -4,8 +4,91 @@ export const currentProtocolVersion = "v1" as const
 
 const identifierSchema = z.string().min(1)
 const timestampSchema = z.iso.datetime()
-const payloadSchema = z.unknown().refine((value) => value !== undefined, {
-  message: "payload is required"
+
+export type JsonValue =
+  | boolean
+  | null
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue }
+
+function isJsonValueInternal(value: unknown, ancestors: Set<object>): value is JsonValue {
+  if (value === null || typeof value === "boolean" || typeof value === "string") {
+    return true
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) && !Object.is(value, -0)
+  }
+
+  if (typeof value !== "object") {
+    return false
+  }
+
+  if (ancestors.has(value)) {
+    return false
+  }
+
+  ancestors.add(value)
+
+  try {
+    if (Array.isArray(value)) {
+      const keys = Reflect.ownKeys(value)
+      if (keys.length !== value.length + 1) {
+        return false
+      }
+
+      for (let index = 0; index < value.length; index += 1) {
+        const descriptor = Object.getOwnPropertyDescriptor(value, index)
+        if (!descriptor?.enumerable || !("value" in descriptor)) {
+          return false
+        }
+
+        if (!isJsonValueInternal(descriptor.value, ancestors)) {
+          return false
+        }
+      }
+
+      return true
+    }
+
+    const prototype = Object.getPrototypeOf(value)
+    if (prototype !== Object.prototype && prototype !== null) {
+      return false
+    }
+
+    for (const key of Reflect.ownKeys(value)) {
+      if (typeof key !== "string") {
+        return false
+      }
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key)
+      if (!descriptor?.enumerable || !("value" in descriptor)) {
+        return false
+      }
+
+      if (!isJsonValueInternal(descriptor.value, ancestors)) {
+        return false
+      }
+    }
+
+    return true
+  } finally {
+    ancestors.delete(value)
+  }
+}
+
+function isJsonValue(value: unknown): value is JsonValue {
+  try {
+    return isJsonValueInternal(value, new Set())
+  } catch {
+    return false
+  }
+}
+
+export const jsonValueSchema = z.custom<JsonValue>(isJsonValue, {
+  message: "value must be losslessly JSON serializable"
 })
 
 export const protocolVersionSchema = z.literal(currentProtocolVersion)
@@ -30,9 +113,9 @@ export const sessionOperationSchema = z
     status: operationStatusSchema,
     createdAt: timestampSchema,
     updatedAt: timestampSchema,
-    extensions: z.record(z.string(), z.unknown()).optional()
+    extensions: z.record(z.string(), jsonValueSchema).optional()
   })
-  .passthrough()
+  .catchall(jsonValueSchema)
 
 export const operationCommandSchema = z
   .object({
@@ -42,11 +125,11 @@ export const operationCommandSchema = z
     sessionId: identifierSchema,
     actorId: identifierSchema,
     type: z.string().min(1),
-    payload: payloadSchema,
+    payload: jsonValueSchema,
     issuedAt: timestampSchema,
-    extensions: z.record(z.string(), z.unknown()).optional()
+    extensions: z.record(z.string(), jsonValueSchema).optional()
   })
-  .passthrough()
+  .catchall(jsonValueSchema)
 
 export const operationEventSchema = z
   .object({
@@ -54,13 +137,13 @@ export const operationEventSchema = z
     eventId: identifierSchema,
     operationId: identifierSchema,
     sessionId: identifierSchema,
-    sequence: z.number().int().positive(),
+    sequence: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
     type: z.string().min(1),
-    payload: payloadSchema,
+    payload: jsonValueSchema,
     occurredAt: timestampSchema,
-    extensions: z.record(z.string(), z.unknown()).optional()
+    extensions: z.record(z.string(), jsonValueSchema).optional()
   })
-  .passthrough()
+  .catchall(jsonValueSchema)
 
 export const operationEventReplaySchema = z
   .array(operationEventSchema)
@@ -105,20 +188,20 @@ export const protocolErrorSchema = z
     code: protocolErrorCodeSchema,
     message: z.string().min(1),
     operationId: identifierSchema.optional(),
-    details: z.unknown().optional()
+    details: jsonValueSchema.optional()
   })
-  .passthrough()
+  .catchall(jsonValueSchema)
 
 type OperationCommandEnvelope = z.infer<typeof operationCommandSchema>
 type OperationEventEnvelope = z.infer<typeof operationEventSchema>
 
-export type OperationCommand<TPayload = unknown> = Omit<OperationCommandEnvelope, "payload"> & {
+export type OperationCommand<TPayload = JsonValue> = Omit<OperationCommandEnvelope, "payload"> & {
   payload: TPayload
 }
-export type OperationEvent<TPayload = unknown> = Omit<OperationEventEnvelope, "payload"> & {
+export type OperationEvent<TPayload = JsonValue> = Omit<OperationEventEnvelope, "payload"> & {
   payload: TPayload
 }
-export type OperationEventReplay<TPayload = unknown> = Array<OperationEvent<TPayload>>
+export type OperationEventReplay<TPayload = JsonValue> = Array<OperationEvent<TPayload>>
 export type OperationStatus = z.infer<typeof operationStatusSchema>
 export type ProtocolError = z.infer<typeof protocolErrorSchema>
 export type ProtocolVersion = z.infer<typeof protocolVersionSchema>

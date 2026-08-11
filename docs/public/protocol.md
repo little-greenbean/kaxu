@@ -8,7 +8,8 @@
 - One `operationId` identifies the same action across its full lifecycle.
 - Events are ordered within a session and can be replayed after reconnect.
 - Consumers must be idempotent.
-- Unknown top-level fields are preserved so older clients can ignore newer extensions.
+- Wire values must be losslessly JSON serializable.
+- Unknown top-level fields are preserved when their values are valid JSON so older clients can ignore newer extensions.
 - Provider-specific payloads stay behind adapter-owned extension fields.
 
 ## Exported contract
@@ -16,6 +17,7 @@
 ```ts
 import {
   currentProtocolVersion,
+  jsonValueSchema,
   operationCommandSchema,
   operationEventReplaySchema,
   operationEventSchema,
@@ -25,6 +27,20 @@ import {
   sessionOperationSchema
 } from "@kaxu/protocol"
 ```
+
+### `JsonValue`
+
+```ts
+type JsonValue =
+  | boolean
+  | null
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue }
+```
+
+`jsonValueSchema` rejects values that JSON cannot preserve, including `undefined`, `bigint`, functions, symbols, non-finite numbers, negative zero, cycles, sparse arrays, accessors, non-enumerable properties, and class instances.
 
 ### `SessionOperation`
 
@@ -45,14 +61,14 @@ type SessionOperation = {
     | "cancelled"
   createdAt: string
   updatedAt: string
-  extensions?: Record<string, unknown>
+  extensions?: Record<string, JsonValue>
 }
 ```
 
 ### `OperationCommand`
 
 ```ts
-type OperationCommand<TPayload = unknown> = {
+type OperationCommand<TPayload = JsonValue> = {
   protocolVersion: "v1"
   commandId: string
   operationId: string
@@ -61,23 +77,23 @@ type OperationCommand<TPayload = unknown> = {
   type: string
   payload: TPayload
   issuedAt: string
-  extensions?: Record<string, unknown>
+  extensions?: Record<string, JsonValue>
 }
 ```
 
 ### `OperationEvent`
 
 ```ts
-type OperationEvent<TPayload = unknown> = {
+type OperationEvent<TPayload = JsonValue> = {
   protocolVersion: "v1"
   eventId: string
   operationId: string
   sessionId: string
-  sequence: number
+  sequence: number // integer from 1 through Number.MAX_SAFE_INTEGER
   type: string
   payload: TPayload
   occurredAt: string
-  extensions?: Record<string, unknown>
+  extensions?: Record<string, JsonValue>
 }
 ```
 
@@ -89,16 +105,16 @@ type ProtocolError = {
   code: "invalid_envelope" | "invalid_transition" | "unsupported_version"
   message: string
   operationId?: string
-  details?: unknown
+  details?: JsonValue
 }
 ```
 
 ## Replay
 
-`operationEventReplaySchema` validates a contiguous event list for one session. The first event can start at any positive sequence, but every following event must increment by one and stay in the same session.
+`operationEventReplaySchema` validates a contiguous event list for one session. The first event can start at any sequence from `1` through `Number.MAX_SAFE_INTEGER`, but every following event must increment by one and stay in the same session.
 
 Replayed events retain their original `eventId`, `operationId`, and `sequence` so consumers can deduplicate them without executing an operation twice.
 
 ## Compatibility
 
-`currentProtocolVersion` is `v1`. Clients should reject unknown protocol versions closed rather than guessing at compatibility. Unknown optional fields are retained by the schema parser for forward-compatible projections.
+`currentProtocolVersion` is `v1`. Clients should reject unknown protocol versions closed rather than guessing at compatibility. Unknown optional fields with JSON-safe values are retained by the schema parser for forward-compatible projections.
