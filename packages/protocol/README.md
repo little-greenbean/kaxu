@@ -1,5 +1,5 @@
 # `@kaxu/protocol`
 
-Planned home of versioned `OperationCommand`, `OperationEvent`, capability, and error schemas.
+Executable protocol schemas, version checks, and replay helpers for Kaxu.
 
-The initial wire contract will be published only after executable schemas and compatibility tests exist.
+`pnpm build` emits the Node.js ESM package to `dist`. The package exports that output as the v1 contract used by later operation-core, host, adapter, and web work.

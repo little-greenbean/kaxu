@@ -9,12 +9,16 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "build": "pnpm --filter @kaxu/protocol run build",
     "check": "pnpm run check:public-boundary && pnpm run typecheck && pnpm run test",
     "check:public-boundary": "bash scripts/check-public-boundary.sh",
     "typecheck": "tsc --noEmit --project tsconfig.json",
-    "test": "vitest run --config vitest.config.mts"
+    "test": "pnpm run build && vitest run --config vitest.config.mts && pnpm run test:package-load",
+    "test:coverage": "pnpm run build && vitest run --config vitest.config.mts --coverage && pnpm run test:package-load",
+    "test:package-load": "node packages/protocol/test/package-load.mjs"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "4.1.10",
     "typescript": "7.0.2",
     "vitest": "4.1.10"
   }

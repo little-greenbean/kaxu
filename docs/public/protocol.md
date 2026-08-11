@@ -1,6 +1,6 @@
 # Operation Protocol
 
-The Kaxu protocol connects clients, the operation core, adapters, and event consumers. This document defines the initial direction; schemas are not stable until a versioned package and contract tests are published.
+`packages/protocol` publishes the executable v1 contract. The package exports Zod schemas and helpers; this document matches the shipped names and behavior.
 
 ## Protocol principles
 
@@ -8,10 +8,43 @@ The Kaxu protocol connects clients, the operation core, adapters, and event cons
 - One `operationId` identifies the same action across its full lifecycle.
 - Events are ordered within a session and can be replayed after reconnect.
 - Consumers must be idempotent.
-- Unknown optional fields must not break older clients.
+- Wire values must be losslessly JSON serializable.
+- Wire envelopes must be plain objects whose own properties are enumerable string data properties.
+- Optional wire fields may be omitted, but must not be present with the value `undefined`.
+- Unknown top-level fields are preserved when their values are valid JSON so older clients can ignore newer extensions.
 - Provider-specific payloads stay behind adapter-owned extension fields.
 
-## Conceptual operation
+## Exported contract
+
+```ts
+import {
+  currentProtocolVersion,
+  jsonValueSchema,
+  operationCommandSchema,
+  operationEventReplaySchema,
+  operationEventSchema,
+  operationStatusSchema,
+  protocolErrorSchema,
+  protocolVersionSchema,
+  sessionOperationSchema
+} from "@kaxu/protocol"
+```
+
+### `JsonValue`
+
+```ts
+type JsonValue =
+  | boolean
+  | null
+  | number
+  | string
+  | JsonValue[]
+  | { [key: string]: JsonValue }
+```
+
+`jsonValueSchema` rejects values that JSON cannot preserve, including `undefined`, `bigint`, functions, symbols, non-finite numbers, negative zero, cycles, sparse arrays, accessors, non-enumerable properties, and class instances.
+
+### `SessionOperation`
 
 ```ts
 type SessionOperation = {
@@ -30,14 +63,15 @@ type SessionOperation = {
     | "cancelled"
   createdAt: string
   updatedAt: string
+  extensions?: Record<string, JsonValue>
 }
 ```
 
-## Conceptual command envelope
+### `OperationCommand`
 
 ```ts
-type OperationCommand<TPayload = unknown> = {
-  protocolVersion: string
+type OperationCommand<TPayload extends JsonValue = JsonValue> = {
+  protocolVersion: "v1"
   commandId: string
   operationId: string
   sessionId: string
@@ -45,37 +79,51 @@ type OperationCommand<TPayload = unknown> = {
   type: string
   payload: TPayload
   issuedAt: string
+  extensions?: Record<string, JsonValue>
 }
 ```
 
-## Conceptual event envelope
+### `OperationEvent`
 
 ```ts
-type OperationEvent<TPayload = unknown> = {
-  protocolVersion: string
+type OperationEvent<TPayload extends JsonValue = JsonValue> = {
+  protocolVersion: "v1"
   eventId: string
   operationId: string
   sessionId: string
-  sequence: number
+  sequence: number // integer from 1 through Number.MAX_SAFE_INTEGER
   type: string
   payload: TPayload
   occurredAt: string
+  extensions?: Record<string, JsonValue>
 }
 ```
 
-## Lifecycle
+### `ProtocolError`
 
-```text
-requested -> waiting -> approved -> running -> completed
-                                      \-> failed / cancelled
+```ts
+type ProtocolError = {
+  protocolVersion: string
+  code: "invalid_envelope" | "invalid_transition" | "unsupported_version"
+  message: string
+  operationId?: string
+  details?: JsonValue
+}
 ```
-
-Transitions must be deterministic. Invalid transitions produce a protocol error and do not mutate the operation.
 
 ## Replay
 
-A client records the highest contiguous event sequence it has applied. After reconnect, it requests events after that sequence. Replayed events retain their original `eventId`, `operationId`, and sequence so consumers can deduplicate them.
+`operationEventReplaySchema` validates a contiguous event list for one session. The first event can start at any sequence from `1` through `Number.MAX_SAFE_INTEGER`, but every following event must increment by one and stay in the same session. Every `eventId` in one replay batch must be unique.
+
+Replayed events retain their original `eventId`, `operationId`, and `sequence` so consumers can deduplicate them without executing an operation twice.
+
+The exported replay type applies the same payload constraint:
+
+```ts
+type OperationEventReplay<TPayload extends JsonValue = JsonValue> =
+  Array<OperationEvent<TPayload>>
+```
 
 ## Compatibility
 
-The first implementation will define versioning rules alongside executable schemas and contract tests. Until then, these types are explanatory and must not be treated as a stable wire contract.
+`currentProtocolVersion` is `v1`. Clients should reject unknown protocol versions closed rather than guessing at compatibility. Unknown optional fields with JSON-safe values are retained by the schema parser for forward-compatible projections. Known optional fields may be absent, but an own property explicitly set to `undefined` is invalid because JSON serialization would silently remove it. Symbol keys, non-enumerable properties, accessors, and non-plain envelope instances are rejected before object parsing so validation cannot silently discard them.

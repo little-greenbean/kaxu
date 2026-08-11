@@ -16,11 +16,11 @@ Do not duplicate these rules in another governance file.
 - Model: Open Core
 - License: LGPL-3.0-only
 - Initialized: 2026-08-04
-- Current state: pre-implementation architecture stage with shared TypeScript, Vitest, and Zod tooling
+- Current state: first protocol contract implemented; the control-loop runtime is not implemented yet
 
-The repository currently has no runtime source beyond scripts/check-public-boundary.sh. The four packages and one app are placeholders with package metadata and intent documentation only.
+The repository now has executable schemas and contract tests in packages/protocol. The operation core, adapter SDK, Host, and Web projection remain placeholders with package metadata and intent documentation only.
 
-> 当前除 scripts/check-public-boundary.sh 外没有运行时源码。4 个包和 1 个应用只有包元数据及意图说明，不能视为已交付能力。
+> 当前只有 packages/protocol 提供可执行 schema 和契约测试。operation-core、adapter-sdk、Host 和 Web 仍只有包元数据及意图说明，不能视为已交付能力。
 
 ---
 
@@ -81,9 +81,9 @@ packages/operation-core must not import Provider SDKs, UI frameworks, network tr
 
 ### 2.4 Protocol stability / 协议稳定性
 
-Types in docs/public/protocol.md are explanatory. They are not a stable wire contract until packages/protocol ships executable schemas and contract tests.
+The executable v1 wire contract lives in packages/protocol. docs/public/protocol.md explains the same contract and must stay aligned with its schemas and contract tests.
 
-Do not build external integrations against the explanatory types or describe them as stable.
+The package is still private and unreleased; do not build external integrations against the unpublished 0.x package.
 
 ---
 
@@ -132,7 +132,7 @@ Placeholder READMEs describe intent, not working behavior.
 | License | LGPL-3.0-only | Confirmed |
 | Language | TypeScript | Confirmed; strict root typecheck |
 | Schema library | Zod 4.4.3 | Confirmed in @kaxu/protocol |
-| Build tool | Not selected | Pending |
+| Build tool | TypeScript compiler | Confirmed for workspace package builds |
 | Test framework | Vitest 4.1.10 | Confirmed; root test command |
 | PR review | PR-Agent v0.42.0 GitHub Action, pinned by commit | Confirmed |
 | Linter / formatter | None beyond .editorconfig | Pending |
@@ -146,14 +146,15 @@ New dependencies must have compatible open-source licenses and pinned versions r
 | Command | Purpose |
 |---|---|
 | pnpm install | Install dependencies |
+| pnpm build | Build executable workspace packages |
 | pnpm typecheck | Run the strict root TypeScript check |
 | pnpm test | Run the Vitest test suite |
+| pnpm test:coverage | Run Vitest with the V8 coverage provider |
+| pnpm test:package-load | Verify the built protocol package with native Node.js ESM |
 | pnpm check | Run all currently defined checks |
 | pnpm check:public-boundary | Run scripts/check-public-boundary.sh |
 
-dev, build, lint, and format are not defined. Do not reference them in documentation or CI until they exist.
-
-When the first real toolchain is introduced, update this section and the change log in the same PR.
+dev, lint, and format are not defined. Do not reference them in documentation or CI until they exist.
 
 ---
 
@@ -267,7 +268,6 @@ Do not add scaffolding for deferred features.
 
 ### Tooling
 
-- [ ] Select a build tool.
 - [ ] Select a linter and formatter.
 - [ ] Extend pnpm check with lint when a linter is selected.
 - [ ] Add examples/package.json so examples participates in the workspace.
@@ -275,7 +275,6 @@ Do not add scaffolding for deferred features.
 ### Implementation
 
 - [ ] packages/operation-core: SessionOperation and deterministic transitions.
-- [ ] packages/protocol: executable schemas and contract tests.
 - [ ] packages/adapter-sdk: AgentAdapter, errors, backpressure, conformance suite.
 - [ ] packages/host: local process and session boundaries.
 - [ ] apps/web: pairing, session projection, approvals, reconnect and replay.
@@ -291,8 +290,10 @@ Do not add scaffolding for deferred features.
 | Date | Change |
 |---|---|
 | 2026-08-11 | Made official PR-Agent model selection configurable through GitHub Actions Variables. |
+| 2026-08-11 | Added TypeScript package builds and a native Node.js package-load test for @kaxu/protocol. |
 | 2026-08-11 | Added OpenAI-compatible endpoint mapping and fail-closed automatic push reviews to PR-Agent. |
 | 2026-08-11 | Replaced the repository-owned review pipeline with pinned PR-Agent v0.42.0 configuration. |
+| 2026-08-10 | Published the executable v1 protocol schemas, replay validation, protocol errors, and contract tests in @kaxu/protocol. |
 | 2026-08-10 | Added the first shared TypeScript, Vitest, and Zod toolchain; pnpm check now runs boundary, type, and test checks. |
 | 2026-08-10 | Consolidated governance and current state into current_project.md; AGENTS.md now points here. |
 | 2026-08-05 | Initialized the architecture-stage project state and open task list. |
