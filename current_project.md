@@ -289,6 +289,7 @@ Do not add scaffolding for deferred features.
 
 | Date | Change |
 |---|---|
+| 2026-08-11 | Made official PR-Agent model selection configurable through GitHub Actions Variables. |
 | 2026-08-11 | Added TypeScript package builds and a native Node.js package-load test for @kaxu/protocol. |
 | 2026-08-11 | Added OpenAI-compatible endpoint mapping and fail-closed automatic push reviews to PR-Agent. |
 | 2026-08-11 | Replaced the repository-owned review pipeline with pinned PR-Agent v0.42.0 configuration. |

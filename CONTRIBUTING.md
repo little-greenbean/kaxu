@@ -36,10 +36,11 @@ Kaxu uses the open-source PR-Agent GitHub Action for automated code review.
 - Trusted Draft and Ready PRs receive a full review when opened, reopened, marked ready, or updated with new commits.
 - A repository owner, member, or collaborator can comment `/review` to run another full review.
 - Use `/review -i` for an incremental review of changes since the previous review.
-- Repository review settings live in `.pr_agent.toml`; model selection is currently omitted so it can be configured separately.
+- Repository review settings live in `.pr_agent.toml`. Model selection comes from the `PR_AGENT_MODEL` Actions Variable; `PR_AGENT_FALLBACK_MODELS` is a JSON array string such as `["fallback-model"]`.
 - The OpenAI-compatible path reads `OPENAI_KEY` and the optional `OPENAI_API_BASE`; a custom endpoint must support `POST /chat/completions` and normally includes `/v1`.
 - Other Providers require their documented model prefix and Secret environment mapping in the workflow.
-- Provider credentials belong in GitHub Actions Secrets. Never put a Key in a PR, Issue, workflow, or tracked configuration file.
+- Configure model identifiers under repository Settings > Secrets and variables > Actions > Variables. Configure `OPENAI_KEY` and `OPENAI_API_BASE` under Actions Secrets.
+- Provider credentials belong in GitHub Actions Secrets. Never put a Key or Base URL in a PR, Issue, workflow, Actions Variable, or tracked configuration file.
 - Automatic review failures fail the Action. PR-Agent v0.42.0 may report a failed manual `/review` only in the Action logs.
 
 Changes to the workflow or `.pr_agent.toml` take effect after they reach the default branch because `pull_request_target` loads its workflow from that trusted branch.
