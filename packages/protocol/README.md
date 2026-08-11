@@ -2,4 +2,4 @@
 
 Executable protocol schemas, version checks, and replay helpers for Kaxu.
 
-Exports live from `src/index.ts` and provide the v1 contract used by later operation-core, host, adapter, and web work.
+`pnpm build` emits the Node.js ESM package to `dist`. The package exports that output as the v1 contract used by later operation-core, host, adapter, and web work.

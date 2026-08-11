@@ -10,7 +10,7 @@ export {
   protocolErrorSchema,
   protocolVersionSchema,
   sessionOperationSchema
-} from "./schemas"
+} from "./schemas.js"
 
 export type {
   OperationCommand,
@@ -20,4 +20,4 @@ export type {
   ProtocolError,
   ProtocolVersion,
   SessionOperation
-} from "./schemas"
+} from "./schemas.js"

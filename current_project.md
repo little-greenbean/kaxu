@@ -131,7 +131,7 @@ Placeholder READMEs describe intent, not working behavior.
 | License | LGPL-3.0-only | Confirmed |
 | Language | TypeScript | Confirmed; strict root typecheck |
 | Schema library | Zod 4.4.3 | Confirmed in @kaxu/protocol |
-| Build tool | Not selected | Pending |
+| Build tool | TypeScript compiler | Confirmed for workspace package builds |
 | Test framework | Vitest 4.1.10 | Confirmed; root test command |
 | Linter / formatter | None beyond .editorconfig | Pending |
 
@@ -144,15 +144,15 @@ New dependencies must have compatible open-source licenses and pinned versions r
 | Command | Purpose |
 |---|---|
 | pnpm install | Install dependencies |
+| pnpm build | Build executable workspace packages |
 | pnpm typecheck | Run the strict root TypeScript check |
 | pnpm test | Run the Vitest test suite |
 | pnpm test:coverage | Run Vitest with the V8 coverage provider |
+| pnpm test:package-load | Verify the built protocol package with native Node.js ESM |
 | pnpm check | Run all currently defined checks |
 | pnpm check:public-boundary | Run scripts/check-public-boundary.sh |
 
-dev, build, lint, and format are not defined. Do not reference them in documentation or CI until they exist.
-
-When the first real toolchain is introduced, update this section and the change log in the same PR.
+dev, lint, and format are not defined. Do not reference them in documentation or CI until they exist.
 
 ---
 
@@ -266,7 +266,6 @@ Do not add scaffolding for deferred features.
 
 ### Tooling
 
-- [ ] Select a build tool.
 - [ ] Select a linter and formatter.
 - [ ] Extend pnpm check with lint when a linter is selected.
 - [ ] Add examples/package.json so examples participates in the workspace.
@@ -288,6 +287,7 @@ Do not add scaffolding for deferred features.
 
 | Date | Change |
 |---|---|
+| 2026-08-11 | Added TypeScript package builds and a native Node.js package-load test for @kaxu/protocol. |
 | 2026-08-10 | Published the executable v1 protocol schemas, replay validation, protocol errors, and contract tests in @kaxu/protocol. |
 | 2026-08-10 | Added the first shared TypeScript, Vitest, and Zod toolchain; pnpm check now runs boundary, type, and test checks. |
 | 2026-08-10 | Consolidated governance and current state into current_project.md; AGENTS.md now points here. |
