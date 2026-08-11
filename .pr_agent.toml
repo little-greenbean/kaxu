@@ -1,5 +1,5 @@
 [config]
-# Add model and fallback_models here after choosing a Provider. Keep credentials in Actions Secrets.
+# The workflow injects model and fallback_models from Actions Variables. Keep credentials in Actions Secrets.
 publish_output = true
 propagate_tool_errors = true
 repo_context_files = ["AGENTS.md", "current_project.md"]
