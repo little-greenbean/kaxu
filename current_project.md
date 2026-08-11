@@ -290,6 +290,7 @@ Do not add scaffolding for deferred features.
 
 | Date | Change |
 |---|---|
+| 2026-08-11 | Made official PR-Agent model selection configurable through GitHub Actions Variables. |
 | 2026-08-11 | Added OpenAI-compatible endpoint mapping and fail-closed automatic push reviews to PR-Agent. |
 | 2026-08-11 | Replaced the repository-owned review pipeline with pinned PR-Agent v0.42.0 configuration. |
 | 2026-08-10 | Added the first shared TypeScript, Vitest, and Zod toolchain; pnpm check now runs boundary, type, and test checks. |
