@@ -15,6 +15,4 @@ publish_output_no_suggestions = true
 auto_review = true
 auto_describe = false
 auto_improve = false
-pr_actions = ["opened", "reopened", "ready_for_review"]
-handle_push_trigger = true
-push_commands = ["/review -i"]
+pr_actions = ["opened", "reopened", "ready_for_review", "synchronize"]
