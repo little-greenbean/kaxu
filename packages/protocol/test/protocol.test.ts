@@ -36,16 +36,20 @@ const event = (sequence: number, sessionId = "session-1") => ({
   occurredAt: timestamp
 })
 
+const command = () => ({
+  protocolVersion: currentProtocolVersion,
+  commandId: "command-1",
+  operationId: "operation-1",
+  sessionId: "session-1",
+  actorId: "actor-1",
+  type: "message.send",
+  payload: { message: "hello" },
+  issuedAt: timestamp
+})
+
 test("accepts the v1 command envelope and preserves extension fields", () => {
   const parsed = operationCommandSchema.parse({
-    protocolVersion: currentProtocolVersion,
-    commandId: "command-1",
-    operationId: "operation-1",
-    sessionId: "session-1",
-    actorId: "actor-1",
-    type: "message.send",
-    payload: { message: "hello" },
-    issuedAt: timestamp,
+    ...command(),
     futureField: {
       nested: ["kept", 1, true, null]
     }
@@ -200,6 +204,45 @@ test("rejects accessor and non-enumerable properties", () => {
   expect(jsonValueSchema.safeParse(accessorObject).success).toBe(false)
   expect(jsonValueSchema.safeParse(hiddenObject).success).toBe(false)
   expect(jsonValueSchema.safeParse(accessorArray).success).toBe(false)
+})
+
+test.each([
+  ["symbol key", { ...command(), [Symbol("hidden")]: "value" }],
+  ["non-enumerable property", Object.defineProperty(command(), "hidden", {
+    enumerable: false,
+    value: "value"
+  })],
+  ["accessor property", Object.defineProperty(command(), "hidden", {
+    enumerable: true,
+    get: () => "value"
+  })],
+  ["class instance", Object.assign(new (class WireEnvelope {})(), command())],
+  ["uninspectable proxy", new Proxy(command(), {
+    ownKeys() {
+      throw new Error("uninspectable")
+    }
+  })],
+  ["property without a descriptor", new Proxy(command(), {
+    ownKeys(target) {
+      return [...Reflect.ownKeys(target), "phantom"]
+    },
+    getOwnPropertyDescriptor(target, key) {
+      if (key === "phantom") {
+        return undefined
+      }
+      return Reflect.getOwnPropertyDescriptor(target, key)
+    }
+  })]
+])("rejects lossy wire envelope shape: %s", (_name, input) => {
+  expect(operationCommandSchema.safeParse(input).success).toBe(false)
+})
+
+test.each([null, "command", []])("delegates non-object envelope input validation: %j", (input) => {
+  expect(operationCommandSchema.safeParse(input).success).toBe(false)
+})
+
+test("accepts a null-prototype wire envelope", () => {
+  expect(operationCommandSchema.safeParse(Object.assign(Object.create(null), command())).success).toBe(true)
 })
 
 test("rejects cycles and objects that cannot be inspected", () => {

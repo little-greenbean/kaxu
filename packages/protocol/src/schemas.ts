@@ -105,6 +105,48 @@ function rejectExplicitUndefinedFields(fields: readonly string[]) {
   }
 }
 
+function hasLosslessWireObjectShape(value: unknown): boolean {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return true
+  }
+
+  try {
+    const prototype = Object.getPrototypeOf(value)
+    if (prototype !== Object.prototype && prototype !== null) {
+      return false
+    }
+
+    for (const key of Reflect.ownKeys(value)) {
+      if (typeof key !== "string") {
+        return false
+      }
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key)
+      if (!descriptor?.enumerable || !("value" in descriptor)) {
+        return false
+      }
+    }
+
+    return true
+  } catch {
+    return false
+  }
+}
+
+function withWireObjectInput<TSchema extends z.ZodType>(schema: TSchema) {
+  return z.preprocess((value, context) => {
+    if (!hasLosslessWireObjectShape(value)) {
+      context.addIssue({
+        code: "custom",
+        message: "wire envelopes must use plain enumerable string data properties"
+      })
+      return z.NEVER
+    }
+
+    return value
+  }, schema)
+}
+
 export const protocolVersionSchema = z.literal(currentProtocolVersion)
 
 export const operationStatusSchema = z.enum([
@@ -117,8 +159,8 @@ export const operationStatusSchema = z.enum([
   "cancelled"
 ])
 
-export const sessionOperationSchema = z
-  .object({
+export const sessionOperationSchema = withWireObjectInput(
+  z.object({
     operationId: identifierSchema,
     sessionId: identifierSchema,
     actorId: identifierSchema,
@@ -131,9 +173,10 @@ export const sessionOperationSchema = z
   })
   .catchall(jsonValueSchema)
   .superRefine(rejectExplicitUndefinedFields(["extensions"]))
+)
 
-export const operationCommandSchema = z
-  .object({
+export const operationCommandSchema = withWireObjectInput(
+  z.object({
     protocolVersion: protocolVersionSchema,
     commandId: identifierSchema,
     operationId: identifierSchema,
@@ -146,9 +189,10 @@ export const operationCommandSchema = z
   })
   .catchall(jsonValueSchema)
   .superRefine(rejectExplicitUndefinedFields(["extensions"]))
+)
 
-export const operationEventSchema = z
-  .object({
+export const operationEventSchema = withWireObjectInput(
+  z.object({
     protocolVersion: protocolVersionSchema,
     eventId: identifierSchema,
     operationId: identifierSchema,
@@ -161,6 +205,7 @@ export const operationEventSchema = z
   })
   .catchall(jsonValueSchema)
   .superRefine(rejectExplicitUndefinedFields(["extensions"]))
+)
 
 export const operationEventReplaySchema = z
   .array(operationEventSchema)
@@ -209,8 +254,8 @@ export const protocolErrorCodeSchema = z.enum([
   "unsupported_version"
 ])
 
-export const protocolErrorSchema = z
-  .object({
+export const protocolErrorSchema = withWireObjectInput(
+  z.object({
     protocolVersion: z.string().min(1),
     code: protocolErrorCodeSchema,
     message: z.string().min(1),
@@ -219,6 +264,7 @@ export const protocolErrorSchema = z
   })
   .catchall(jsonValueSchema)
   .superRefine(rejectExplicitUndefinedFields(["operationId", "details"]))
+)
 
 type OperationCommandEnvelope = z.infer<typeof operationCommandSchema>
 type OperationEventEnvelope = z.infer<typeof operationEventSchema>

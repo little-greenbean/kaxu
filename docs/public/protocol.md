@@ -9,6 +9,7 @@
 - Events are ordered within a session and can be replayed after reconnect.
 - Consumers must be idempotent.
 - Wire values must be losslessly JSON serializable.
+- Wire envelopes must be plain objects whose own properties are enumerable string data properties.
 - Optional wire fields may be omitted, but must not be present with the value `undefined`.
 - Unknown top-level fields are preserved when their values are valid JSON so older clients can ignore newer extensions.
 - Provider-specific payloads stay behind adapter-owned extension fields.
@@ -125,4 +126,4 @@ type OperationEventReplay<TPayload extends JsonValue = JsonValue> =
 
 ## Compatibility
 
-`currentProtocolVersion` is `v1`. Clients should reject unknown protocol versions closed rather than guessing at compatibility. Unknown optional fields with JSON-safe values are retained by the schema parser for forward-compatible projections. Known optional fields may be absent, but an own property explicitly set to `undefined` is invalid because JSON serialization would silently remove it.
+`currentProtocolVersion` is `v1`. Clients should reject unknown protocol versions closed rather than guessing at compatibility. Unknown optional fields with JSON-safe values are retained by the schema parser for forward-compatible projections. Known optional fields may be absent, but an own property explicitly set to `undefined` is invalid because JSON serialization would silently remove it. Symbol keys, non-enumerable properties, accessors, and non-plain envelope instances are rejected before object parsing so validation cannot silently discard them.
